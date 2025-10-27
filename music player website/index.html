@@ -1,0 +1,388 @@
+<!doctype html>
+<!--
+  Stylish Spotify-like single-file demo
+  - Dark neon theme (purple + teal)
+  - Left sidebar, top search/profile bar, main grid of playlist/album cards
+  - Click a card to open a playlist view
+  - Sticky bottom music player with play/pause, prev/next, progress, and volume
+  - All CSS & JS inline so you can save this as `index.html` and open in a browser
+
+  How to use:
+  1. Save this file as index.html
+  2. Open in a modern browser (Chrome/Edge/Firefox)
+  3. Click tracks/cards to play. Sample audio files are loaded from public URLs for demo purposes.
+
+  Note: Replace sample track URLs with your own MP3 files or hosted assets for production.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Neonify — Music</title>
+  <style>
+    :root{
+      --bg:#0b0f16;
+      --panel: rgba(255,255,255,0.04);
+      --muted:#9aa3b2;
+      --accent1:#9b59ff; /* purple */
+      --accent2:#00e5d4; /* teal */
+      --glass: rgba(255,255,255,0.03);
+      --glass-strong: rgba(255,255,255,0.06);
+      font-family: Inter, system-ui, -apple-system, Roboto, 'Segoe UI', 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(155,89,255,0.08), transparent),
+                  radial-gradient(800px 400px at 90% 90%, rgba(0,229,212,0.04), transparent),
+                  var(--bg);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow:hidden;
+    }
+
+    /* Layout */
+    .app{
+      display:grid;
+      grid-template-columns:240px 1fr;
+      grid-template-rows: 1fr auto;
+      height:100vh;
+      gap:20px;
+      padding:20px;
+    }
+
+    /* Sidebar */
+    .sidebar{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:16px;
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+      border:1px solid rgba(255,255,255,0.03);
+      position:relative;
+    }
+    .logo{display:flex;align-items:center;gap:10px}
+    .logo .badge{
+      width:44px;height:44px;border-radius:10px;
+      background:linear-gradient(135deg,var(--accent1),var(--accent2));
+      box-shadow:0 6px 20px rgba(155,89,255,0.15), 0 0 30px rgba(0,229,212,0.04);
+      display:flex;align-items:center;justify-content:center;font-weight:700;
+      font-size:18px;color:#031018
+    }
+    .nav{display:flex;flex-direction:column;gap:10px}
+    .nav a{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;text-decoration:none;color:var(--muted);font-weight:600}
+    .nav a:hover{color:#fff;background:linear-gradient(90deg, rgba(155,89,255,0.06), rgba(0,229,212,0.03));box-shadow:0 4px 14px rgba(0,0,0,0.6);transform:translateY(-2px)}
+    .nav a.active{color:var(--accent2);background:linear-gradient(90deg, rgba(0,229,212,0.04), rgba(155,89,255,0.03));}
+
+    .sidebar .playlists{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+    .playlist-item{font-size:13px;color:var(--muted);padding:8px;border-radius:8px}
+    .playlist-item:hover{color:#fff}
+
+    /* Main area */
+    .main{
+      display:flex;flex-direction:column;gap:18px;height:100%;overflow:hidden;
+    }
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:12px;background:var(--glass-strong);backdrop-filter:blur(6px);
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .search{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.02);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+    .search input{background:transparent;border:0;outline:none;color:#e6eef6;min-width:220px}
+    .profile{display:flex;align-items:center;gap:12px}
+    .avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent1));display:flex;align-items:center;justify-content:center;font-weight:700;color:#021018}
+
+    /* content area */
+    .content{overflow:auto;padding:12px;border-radius:12px}
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px}
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.025);
+      transition:transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .28s;
+    }
+    .card:hover{transform:translateY(-8px);box-shadow:0 18px 40px rgba(0,0,0,0.6)}
+    .cover{width:100%;aspect-ratio:1/1;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#021018}
+    .card .meta{display:flex;flex-direction:column}
+    .card h4{margin:0;font-size:15px}
+    .card p{margin:0;font-size:12px;color:var(--muted)}
+
+    /* glow on hover */
+    .card::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg, rgba(155,89,255,0.06), rgba(0,229,212,0.04));opacity:0;transition:opacity .28s}
+    .card:hover::after{opacity:1}
+
+    /* Playlist view (panel) */
+    .playlist-panel{position:fixed;right:28px;top:80px;width:460px;bottom:100px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border-radius:14px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,255,255,0.025)}
+    .playlist-header{display:flex;gap:12px;align-items:center}
+    .playlist-track{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px}
+    .playlist-track:hover{background:linear-gradient(90deg, rgba(155,89,255,0.03), rgba(0,229,212,0.02));}
+
+    /* Bottom player */
+    .player{
+      grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:linear-gradient(180deg, rgba(3,5,7,0.7), rgba(6,8,10,0.75));border-radius:12px;border:1px solid rgba(255,255,255,0.03);position:sticky;bottom:0;backdrop-filter:blur(6px);
+      margin:0 20px 20px 20px;z-index:80
+    }
+    .player-left{display:flex;align-items:center;gap:12px}
+    .player-controls{display:flex;align-items:center;gap:12px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+    .btn.large{width:48px;height:48px;background:linear-gradient(135deg,var(--accent1),var(--accent2));color:#021018;font-weight:700}
+    .progress{display:flex;align-items:center;gap:12px;width:420px}
+    .progress input[type=range]{appearance:none;width:100%;height:6px;border-radius:8px;background:linear-gradient(90deg,var(--accent1),var(--accent2));outline:none}
+    .time{font-size:12px;color:var(--muted)}
+
+    /* responsive tweaks */
+    @media (max-width:900px){
+      .app{grid-template-columns: 1fr;grid-template-rows: auto 1fr auto;padding:12px}
+      .sidebar{display:none}
+      .player{margin:0 0 12px 0}
+      .playlist-panel{right:12px;left:12px;width:auto}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="badge">Nf</div>
+        <div>
+          <div style="font-weight:800">Neonify</div>
+          <div style="font-size:12px;color:var(--muted)">Music • vibes</div>
+        </div>
+      </div>
+      <nav class="nav">
+    <a href="index.html" class="active">🏠 Home</a>
+    <a href="Browse.html">🔍 Browse</a>
+    <a href="Library.html">📚 Library</a>
+    <a href="Discover.html">✨ Discover</a>
+</nav>
+
+
+      <div class="playlists">
+        <div style="font-size:12px;color:var(--muted);font-weight:700">Your playlists</div>
+        <div class="playlist-item">Late Night Neon</div>
+        <div class="playlist-item">Chill Beats</div>
+        <div class="playlist-item">Focus Mode</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 21L15.8 15.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <input placeholder="Search for songs, artists, playlists..." />
+        </div>
+        <div class="profile">
+          <div style="text-align:right">
+            <div style="font-weight:800">Yazhini</div>
+            <div style="font-size:12px;color:var(--muted)">Premium</div>
+          </div>
+          <div class="avatar">Y</div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="section-title">
+          <h3 style="margin:0">Made for you</h3>
+          <div style="font-size:13px;color:var(--muted)">Recommended • Fresh</div>
+        </div>
+
+        <div class="grid" id="cardGrid">
+          <!-- cards generated by JS -->
+        </div>
+      </div>
+    </main>
+
+    <!-- sticky player -->
+    <div class="player" id="player">
+      <div class="player-left">
+        <div style="width:64px;height:64px;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#021018" id="plcover">Nf</div>
+        <div>
+          <div id="pltitle" style="font-weight:700">Nothing Playing</div>
+          <div id="plartist" style="font-size:13px;color:var(--muted)">—</div>
+        </div>
+      </div>
+
+      <div class="player-controls">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn" id="prevBtn">⏮</button>
+          <button class="btn large" id="playBtn">▶</button>
+          <button class="btn" id="nextBtn">⏭</button>
+        </div>
+        <div class="progress">
+          <div class="time" id="currentTime">0:00</div>
+          <input type="range" id="seek" value="0" min="0" max="100">
+          <div class="time" id="duration">0:00</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px">
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" style="width:90px">
+        <button class="btn">❤️</button>
+      </div>
+    </div>
+
+    <!-- playlist panel (hidden until a card clicked) -->
+    <div class="playlist-panel" id="playlistPanel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="playlist-header">
+          <div style="width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#021018;font-size:18px" id="panelCover">PL</div>
+          <div>
+            <div id="panelTitle" style="font-weight:800;font-size:18px">Playlist</div>
+            <div style="font-size:13px;color:var(--muted)" id="panelDesc">Artist • 8 songs</div>
+          </div>
+        </div>
+        <div>
+          <button class="btn" id="closePanel">✕</button>
+        </div>
+      </div>
+
+      <div style="overflow:auto;flex:1">
+        <div id="tracksList">
+          <!-- tracks inserted by JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Demo data
+    const demo = [
+      {id:1,title:'Midnight Drive',artist:'Neon Nights',coverText:'MD',src:'https://www.w3schools.com/html/horse.mp3',duration:'2:05'},
+      {id:2,title:'Ocean Glow',artist:'Aqua Pulse',coverText:'OG',src:'https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp3',duration:'2:10'},
+      {id:3,title:'City Lights',artist:'Pulse & Co',coverText:'CL',src:'https://www.w3schools.com/html/horse.mp3',duration:'2:05'},
+      {id:4,title:'Focus Loop',artist:'Study Beats',coverText:'FL',src:'https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp3',duration:'2:10'},
+      {id:5,title:'Velvet Night',artist:'The Silhouettes',coverText:'VN',src:'https://www.w3schools.com/html/horse.mp3',duration:'2:05'},
+      {id:6,title:'Paper Skies',artist:'CloudMaker',coverText:'PS',src:'https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp3',duration:'2:10'}
+    ];
+
+    const grid = document.getElementById('cardGrid');
+    const panel = document.getElementById('playlistPanel');
+    const tracksList = document.getElementById('tracksList');
+    const panelTitle = document.getElementById('panelTitle');
+    const panelDesc = document.getElementById('panelDesc');
+    const panelCover = document.getElementById('panelCover');
+
+    demo.forEach(item=>{
+      const card = document.createElement('div');
+      card.className='card';
+      card.innerHTML = `
+        <div class="cover">${item.coverText}</div>
+        <div class="meta">
+          <h4>${item.title}</h4>
+          <p>${item.artist}</p>
+        </div>
+      `;
+      card.addEventListener('click', ()=> openPanel(item));
+      grid.appendChild(card);
+    });
+
+    function openPanel(item){
+      panel.style.display='flex';
+      panelTitle.textContent = item.title;
+      panelDesc.textContent = item.artist + ' • 1 song';
+      panelCover.textContent = item.coverText;
+      tracksList.innerHTML = '';
+
+      const t = document.createElement('div');
+      t.className='playlist-track';
+      t.innerHTML = `<div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#021018">${item.coverText}</div>
+                     <div style='flex:1'>
+                       <div style='font-weight:700'>${item.title}</div>
+                       <div style='font-size:13px;color:var(--muted)'>${item.artist}</div>
+                     </div>
+                     <div style='font-size:13px;color:var(--muted)'>${item.duration}</div>`;
+      t.addEventListener('click', ()=> loadAndPlay(item));
+      tracksList.appendChild(t);
+
+      // Also auto-load into player
+      loadTrack(item);
+    }
+
+    document.getElementById('closePanel').addEventListener('click', ()=> panel.style.display='none');
+
+    // Player logic
+    let audio = new Audio();
+    let current = null;
+    const playBtn = document.getElementById('playBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const titleEl = document.getElementById('pltitle');
+    const artistEl = document.getElementById('plartist');
+    const coverEl = document.getElementById('plcover');
+    const seek = document.getElementById('seek');
+    const currTime = document.getElementById('currentTime');
+    const durTime = document.getElementById('duration');
+    const vol = document.getElementById('volume');
+
+    function loadTrack(item){
+      if(!item) return;
+      current = demo.find(d => d.id===item.id);
+      audio.src = item.src;
+      titleEl.textContent = item.title;
+      artistEl.textContent = item.artist;
+      coverEl.textContent = item.coverText;
+      play();
+    }
+
+    function loadAndPlay(item){ loadTrack(item); play(); }
+
+    function play(){
+      audio.play().catch(()=>{});
+      playBtn.textContent='⏸';
+    }
+    function pause(){ audio.pause(); playBtn.textContent='▶'; }
+
+    playBtn.addEventListener('click', ()=>{
+      if(audio.paused){ play(); } else { pause(); }
+    });
+
+    prevBtn.addEventListener('click', ()=>{
+      if(!current) return;
+      const idx = demo.findIndex(d=>d.id===current.id);
+      const prev = demo[(idx-1+demo.length)%demo.length];
+      loadTrack(prev);
+    });
+    nextBtn.addEventListener('click', ()=>{
+      if(!current) return;
+      const idx = demo.findIndex(d=>d.id===current.id);
+      const next = demo[(idx+1)%demo.length];
+      loadTrack(next);
+    });
+
+    audio.addEventListener('timeupdate', ()=>{
+      if(!audio.duration) return;
+      const pct = (audio.currentTime/audio.duration)*100;
+      seek.value = pct;
+      currTime.textContent = formatTime(audio.currentTime);
+      durTime.textContent = formatTime(audio.duration);
+    });
+
+    seek.addEventListener('input', ()=>{
+      if(!audio.duration) return;
+      audio.currentTime = (seek.value/100)*audio.duration;
+    });
+
+    vol.addEventListener('input', ()=>{ audio.volume = vol.value; });
+
+    function formatTime(s){
+      if(!s || isNaN(s)) return '0:00';
+      const m = Math.floor(s/60); const sec = Math.floor(s%60).toString().padStart(2,'0');
+      return `${m}:${sec}`;
+    }
+
+    // Load first track as a demo
+    loadTrack(demo[0]);
+
+    // keyboard space to toggle play
+    window.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); if(audio.paused) play(); else pause(); }});
+
+  </script>
+</body>
+</html>

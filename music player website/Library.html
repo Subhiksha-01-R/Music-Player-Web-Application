@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Library | Neonify</title>
+  <style>
+    :root{--bg:#0b0f16;--muted:#9aa3b2;--accent1:#9b59ff;--accent2:#00e5d4}
+    *{box-sizing:border-box}
+    body{margin:0;height:100vh;font-family:Inter,system-ui,Arial;background:radial-gradient(800px 400px at 10% 10%, rgba(155,89,255,0.06), transparent),var(--bg);color:#e6eef6;display:flex}
+    .sidebar{width:230px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:22px;display:flex;flex-direction:column;justify-content:space-between}
+    .sidebar a{color:var(--muted);text-decoration:none;padding:10px 0;display:block;font-weight:700}
+    .sidebar a:hover{color:#fff}
+    .main{flex:1;padding:26px;overflow:auto}
+    h1{margin:0 0 8px 0}
+    .section{margin-top:18px}
+    .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .item{background:linear-gradient(135deg,var(--accent1),var(--accent2));padding:14px;border-radius:12px;color:#021018;font-weight:800;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+    .small{font-size:13px;color:rgba(2,16,24,0.65);font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <div style="font-weight:900;font-size:18px">Neonify</div>
+      <nav class="nav">
+    <a href="index.html" class="active">🏠 Home</a>
+    <a href="Browse.html">🔍 Browse</a>
+    <a href="Library.html">📚 Library</a>
+    <a href="Discover.html">✨ Discover</a>
+</nav>
+    </div>
+
+    <div style="text-align:left">
+      <div style="font-weight:800">Yazhini</div>
+      <div style="font-size:12px;color:var(--muted)">Premium</div>
+    </div>
+  </div>
+
+  <main class="main">
+    <h1>Your Library</h1>
+    <div style="color:var(--muted);font-size:13px">Saved tracks, albums, and artists — all in one place.</div>
+
+    <div class="section">
+      <h3 style="margin:8px 0">Liked Songs</h3>
+      <div class="list">
+        <div class="item"><div>Midnight Drive</div><div class="small">Neon Nights</div></div>
+        <div class="item"><div>Ocean Glow</div><div class="small">Aqua Pulse</div></div>
+        <div class="item"><div>City Lights</div><div class="small">Pulse & Co</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3 style="margin:8px 0">Playlists</h3>
+      <div class="list">
+        <div class="item">Late Night Neon<div class="small">6 songs</div></div>
+        <div class="item">Chill Beats<div class="small">14 songs</div></div>
+        <div class="item">Focus Mode<div class="small">9 songs</div></div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
